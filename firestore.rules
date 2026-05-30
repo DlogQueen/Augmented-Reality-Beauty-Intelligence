@@ -1,0 +1,132 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Context-friendly helpers
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Specific Validators ---
+
+    function isValidProfile(data) {
+      return data.userId is string 
+        && data.userId.size() <= 128
+        && data.email is string 
+        && data.email.size() <= 128
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024))
+        && (!('skinUndertone' in data) || (data.skinUndertone is string && data.skinUndertone.size() <= 64))
+        && (!('skinTexture' in data) || (data.skinTexture is string && data.skinTexture.size() <= 64))
+        && (!('makeupStyle' in data) || (data.makeupStyle is string && data.makeupStyle.size() <= 64))
+        && (!('onboardingCompleted' in data) || (data.onboardingCompleted is bool))
+        && (!('isPrivateProfile' in data) || (data.isPrivateProfile is bool))
+        && (!('pronouns' in data) || (data.pronouns is string && data.pronouns.size() <= 64))
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 500))
+        && (!('instagramHandle' in data) || (data.instagramHandle is string && data.instagramHandle.size() <= 128))
+        && (!('tiktokHandle' in data) || (data.tiktokHandle is string && data.tiktokHandle.size() <= 128))
+        && (!('favoriteProducts' in data) || (data.favoriteProducts is list && data.favoriteProducts.size() <= 100))
+        && (!('favorites' in data) || (data.favorites is list && data.favorites.size() <= 100))
+        && (!('savedTutorials' in data) || (data.savedTutorials is list && data.savedTutorials.size() <= 100));
+    }
+
+    function isValidLook(data) {
+      return data.userId is string 
+        && data.userId.size() <= 128
+        && data.name is string 
+        && data.name.size() <= 128
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 4096))
+        && (!('undertone' in data) || (data.undertone is string && data.undertone.size() <= 64))
+        && (!('texture' in data) || (data.texture is string && data.texture.size() <= 64));
+    }
+
+    function isValidPost(data) {
+      return data.postId is string 
+        && data.postId.size() <= 128
+        && data.authorId is string 
+        && data.authorId.size() <= 128
+        && data.authorName is string 
+        && data.authorName.size() <= 128
+        && data.imageUrl is string 
+        && data.imageUrl.size() <= 1024
+        && (!('caption' in data) || (data.caption is string && data.caption.size() <= 2048))
+        && (!('likes' in data) || (data.likes is list && data.likes.size() <= 5000))
+        && (!('comments' in data) || (data.comments is list && data.comments.size() <= 1000));
+    }
+
+    function isValidMessage(data) {
+      return data.messageId is string 
+        && data.messageId.size() <= 128
+        && data.senderId is string 
+        && data.senderId.size() <= 128
+        && data.recipientId is string 
+        && data.recipientId.size() <= 128
+        && data.content is string 
+        && data.content.size() <= 4096;
+    }
+
+    // --- Collections ---
+
+    // USERS Collection
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId) && isValidId(userId) && isValidProfile(incoming());
+      allow update: if isOwner(userId) && isValidProfile(incoming());
+      allow delete: if false; // Profiles are permanent
+    }
+
+    // SAVED_LOOKS Collection
+    match /saved_looks/{lookId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(lookId) && incoming().userId == request.auth.uid && isValidLook(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == request.auth.uid && isValidLook(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // POSTS Collection (Community Feed)
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(postId) && incoming().authorId == request.auth.uid && isValidPost(incoming());
+      allow update: if isSignedIn() && isValidPost(incoming()) && (
+        // Action 1: Owner editing post details (caption, etc.)
+        (existing().authorId == request.auth.uid && incoming().authorId == request.auth.uid) ||
+        // Action 2: Anyone liking/unliking or commenting on the post (only likes or comments fields can change)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'comments', 'likesCount']))
+      );
+      allow delete: if isSignedIn() && existing().authorId == request.auth.uid;
+    }
+
+    // MESSAGES Collection (Direct Messaging)
+    match /messages/{messageId} {
+      allow get: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.recipientId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.recipientId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(messageId) && incoming().senderId == request.auth.uid && isValidMessage(incoming());
+      allow update: if false; // Direct messages are immutable once sent
+      allow delete: if isSignedIn() && existing().senderId == request.auth.uid;
+    }
+  }
+}

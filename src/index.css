@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-teal-brand: #14b8a6;
+  --color-pink-brand: #ec4899;
+}
+
+@layer utilities {
+  .bg-tie-dye {
+    background-color: #ffffff;
+    background-image: 
+      radial-gradient(at 10% 20%, rgba(20, 184, 166, 0.18) 0px, transparent 60%),
+      radial-gradient(at 90% 10%, rgba(236, 72, 153, 0.18) 0px, transparent 60%),
+      radial-gradient(at 50% 80%, rgba(20, 184, 166, 0.15) 0px, transparent 55%),
+      radial-gradient(at 85% 85%, rgba(244, 114, 182, 0.18) 0px, transparent 50%),
+      radial-gradient(at 20% 80%, rgba(255, 255, 255, 0.9) 0px, transparent 60%);
+    background-size: 160% 160%;
+    animation: tieDyeMotion 20s ease infinite;
+  }
+}
+
+@keyframes tieDyeMotion {
+  0% { background-position: 0% 40% }
+  50% { background-position: 100% 60% }
+  100% { background-position: 0% 40% }
+}

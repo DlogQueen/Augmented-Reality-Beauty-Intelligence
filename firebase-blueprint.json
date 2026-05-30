@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with makeup diagnostic info, favorites, and settings",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "skinUndertone": { "type": "string" },
+        "skinTexture": { "type": "string" },
+        "makeupStyle": { "type": "string" },
+        "favorites": { "type": "array" },
+        "savedTutorials": { "type": "array" },
+        "onboardingCompleted": { "type": "boolean" },
+        "isPrivateProfile": { "type": "boolean" },
+        "pronouns": { "type": "string" },
+        "bio": { "type": "string" },
+        "instagramHandle": { "type": "string" },
+        "tiktokHandle": { "type": "string" },
+        "favoriteProducts": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "email"]
+    },
+    "SavedLook": {
+      "title": "SavedLook",
+      "description": "A saved customized makeup look and contour mapping",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "userId": { "type": "string" },
+        "undertone": { "type": "string" },
+        "texture": { "type": "string" },
+        "contourPoints": { "type": "object" },
+        "shades": { "type": "object" },
+        "tutorialStep": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "name"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "A social post of a makeup creation for feedback",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "caption": { "type": "string" },
+        "likesCount": { "type": "integer" },
+        "likes": { "type": "array" },
+        "shadesUsed": { "type": "object" },
+        "createdAt": { "type": "string" },
+        "comments": { "type": "array" }
+      },
+      "required": ["postId", "authorId", "imageUrl"]
+    },
+    "DirectMessage": {
+      "title": "DirectMessage",
+      "description": "A secure direct message between community members",
+      "type": "object",
+      "properties": {
+        "messageId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["messageId", "senderId", "recipientId", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles with beauty preferences and diagnostic history"
+    },
+    "/saved_looks/{lookId}": {
+      "schema": "SavedLook",
+      "description": "Saved makeup looks, contour face maps, and notes"
+    },
+    "/posts/{postId}": {
+      "schema": "CommunityPost",
+      "description": "Vibrant community share cards with product lookups"
+    },
+    "/messages/{messageId}": {
+      "schema": "DirectMessage",
+      "description": "Private face-to-face messages between makeup enthusiasts"
+    }
+  }
+}

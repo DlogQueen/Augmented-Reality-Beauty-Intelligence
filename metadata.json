@@ -1,0 +1,6 @@
+{
+  "name": "Spectra A.R.I.",
+  "description": "Your AI-powered Augmented Reality Beauty guide for precision undertone diagnostics, personalized 3D contour mapping, hands-free voice tutorials, and a vibrant beauty community.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
